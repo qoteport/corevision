@@ -1,0 +1,7 @@
+# Normalise text files; scripts and container files must keep Unix line endings even on Windows checkouts.
+* text=auto
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.bat text eol=crlf
