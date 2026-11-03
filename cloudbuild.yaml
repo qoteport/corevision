@@ -1,0 +1,45 @@
+# Continuous deployment with Cloud Build (e.g. a trigger on pushes to main).
+# Needs the resources from deploy/gcp/setup.sh. Set the substitutions on the trigger.
+# The Cloud Build service account needs roles/run.admin and roles/iam.serviceAccountUser on the runtime SA.
+substitutions:
+  _REGION: europe-west1
+  _SERVICE: corevision
+  _REPO: corevision
+  _SQL_INSTANCE: corevision-db
+  _BUCKET: your-gcp-project-id-corevision-photos
+  _RUN_SA: corevision-run
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/corevision:$SHORT_SHA", "."]
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: ["push", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/corevision:$SHORT_SHA"]
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/corevision:$SHORT_SHA
+      - --region=${_REGION}
+      - --service-account=${_RUN_SA}@$PROJECT_ID.iam.gserviceaccount.com
+      - --add-cloudsql-instances=$PROJECT_ID:${_REGION}:${_SQL_INSTANCE}
+      - --set-secrets=DATABASE_URL=corevision-database-url:latest,ANTHROPIC_API_KEY=corevision-anthropic-key:latest
+      - --set-env-vars=CV_GCS_BUCKET=${_BUCKET},CV_DB_POOL_SIZE=5
+      - --cpu=1
+      - --memory=1Gi
+      - --concurrency=40
+      - --timeout=900
+      - --no-cpu-throttling
+      - --no-allow-unauthenticated
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/corevision:$SHORT_SHA
+
+options:
+  logging: CLOUD_LOGGING_ONLY

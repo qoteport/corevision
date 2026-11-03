@@ -1,0 +1,39 @@
+# Run locally the way it runs on GCP (Postgres database, app container):
+#   docker compose up --build   →  http://localhost:8000
+# Put ANTHROPIC_API_KEY (and optional CV_* settings) in .env next to this file.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: corevision
+      POSTGRES_USER: corevision
+      POSTGRES_PASSWORD: corevision   # local only; on GCP the password lives in Secret Manager
+    volumes:
+      - corevision-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U corevision -d corevision"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    build: .
+    image: corevision:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://corevision:corevision@db:5432/corevision
+    volumes:
+      - corevision-photos:/data   # uploaded core photos (on GCP: a Cloud Storage bucket)
+    restart: unless-stopped
+
+volumes:
+  corevision-db:
+  corevision-photos:

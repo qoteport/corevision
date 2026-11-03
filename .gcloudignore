@@ -1,0 +1,15 @@
+# Files not uploaded by `gcloud builds submit`. Secrets and local data stay on your machine.
+.gcloudignore
+.git/
+.env
+.env.*
+!.env.example
+data/
+.venv/
+**/__pycache__/
+.pytest_cache/
+frontend/node_modules/
+frontend/dist/
+deploy/gcp/config.env
+.claude/
+*.db

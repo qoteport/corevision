@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Core Vision Studio</title>
+<link rel="stylesheet" href="styles.css">
+</head><body>
+<header><b>⛏️ Core Vision Studio</b>
+ <select id="pj" aria-label="Project"></select><input id="pname" placeholder="New project name"><button class="btn s" id="npj">Create</button>
+ <span class="sp"></span>
+ <button class="btn s on" id="t1">Logging</button><button class="btn s" id="t2">3D model</button>
+ <select id="exp" aria-label="Export"><option value="">Export…</option><option value="intervals.csv">Intervals CSV</option><option value="collars.csv">Collars CSV</option><option value="surveys.csv">Surveys CSV</option><option value="project.json">Project JSON</option></select>
+</header>
+<div id="banner" class="banner" hidden></div>
+<div id="v1" class="app">
+ <aside>
+  <div class="pn" id="ppn"><h3>Project</h3>
+   <label>Deposit style</label><select id="pdep"><option value="">Open</option></select>
+   <label>CRS (EPSG code)</label><input id="pcrs" inputmode="numeric" placeholder="e.g. 32750">
+   <div class="g2" style="margin-top:8px"><label class="btn s file">Import collars<input type="file" id="icol" accept=".csv,text/csv" hidden></label><label class="btn s file">Import surveys<input type="file" id="isur" accept=".csv,text/csv" hidden></label></div>
+   <div class="mu tiny" style="margin-top:4px">Collars: hole, easting, northing, rl, azimuth, dip, length · Surveys: hole, depth, azimuth, dip</div>
+   <button class="btn s danger" id="dpj" style="margin-top:8px">Delete project</button></div>
+  <div class="pn"><h3>Holes</h3><div id="holes"></div>
+   <label>New hole</label><input id="hn" placeholder="Name e.g. DDH-001">
+   <div class="g3"><div><label>Easting</label><input id="hx" value="0" inputmode="decimal"></div><div><label>Northing</label><input id="hy" value="0" inputmode="decimal"></div><div><label>RL (m)</label><input id="hz" value="0" inputmode="decimal"></div></div>
+   <div class="g3"><div><label>Azimuth °</label><input id="haz" value="90" inputmode="decimal"></div><div><label>Dip ° down</label><input id="hdip" value="60" inputmode="decimal"></div><div><label>Length m</label><input id="hlen" value="150" inputmode="decimal"></div></div>
+   <button class="btn" id="nh" style="margin-top:8px;width:100%">Add hole</button></div>
+  <div class="pn"><h3>Add core image</h3><div id="ahole" class="mu"></div>
+   <div class="g2"><div><label>From (m)</label><input id="afrom" inputmode="decimal"></div><div><label>To (m)</label><input id="ato" inputmode="decimal"></div></div>
+   <label>Depth increases</label><select id="adir"><option value="lr">left to right</option><option value="rl">right to left</option><option value="tb">top to bottom</option><option value="bt">bottom to top</option></select>
+   <label>Photo</label><input id="afile" type="file" accept="image/*">
+   <label class="ck" style="margin-top:6px"><input type="checkbox" id="aai" checked> analyze with AI</label>
+   <button class="btn" id="addgo" style="margin-top:8px;width:100%">Add image</button><div id="ast" class="mu tiny" style="margin-top:6px"></div></div>
+ </aside>
+ <main id="main"></main>
+</div>
+<div id="v2" hidden class="wrap"><div class="pn">
+ <div class="tb"><button class="btn s" id="pl">▶ Drill</button><input id="dsl" type="range" min="0" max="100" step="0.1" value="100" style="width:220px" aria-label="Bit depth"><span id="dro" class="mu"></span>
+  <select id="spd" aria-label="Speed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select>
+  <label class="ck"><input type="checkbox" id="cq" checked> correlation</label><label class="ck"><input type="checkbox" id="cs" checked> core segments</label><label class="ck"><input type="checkbox" id="cl"> lithology</label><button class="btn s" id="rv">Reset view</button><button class="btn s" id="rf">Refresh</button></div>
+ <div id="cv"><div id="tip" class="tip"></div></div>
+ <div class="lg" style="margin-top:8px"><span><i style="background:#ff8a3d"></i>mineralization</span><span><i style="background:#4c8dff"></i>vein</span><span><i style="background:#2fbf9b"></i>alteration</span><span><i style="background:#ff4d6a"></i>structure</span><span><i style="background:#9aa3b2"></i>lithology</span><span class="mu">drag to orbit · right-drag or shift-drag to pan · wheel to zoom · paths use minimum-curvature desurvey when surveys exist</span></div></div></div>
+<div id="toast" class="toast" hidden></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="app.js"></script>
+</body></html>

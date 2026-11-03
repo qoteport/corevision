@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Core Vision Studio</title>
+<style>
+:root{--bg:#f3f4f7;--p:#fff;--p2:#eef0f4;--ln:#dcdfe6;--ink:#14161b;--mu:#5f6776;--ac:#d9591a;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e0f12;--p:#171a20;--p2:#1f232b;--ln:#2b303a;--ink:#e8eaee;--mu:#8b93a3;--ac:#ff8a3d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e0f12;--p:#171a20;--p2:#1f232b;--ln:#2b303a;--ink:#e8eaee;--mu:#8b93a3;--ac:#ff8a3d;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:var(--p);border-bottom:1px solid var(--ln)}
+header b{font-size:1.05rem}header input{width:150px}header select{width:170px}.sp{flex:1}
+.app{display:grid;grid-template-columns:280px minmax(0,1fr);gap:12px;max-width:1360px;margin:0 auto;padding:12px 14px 40px}
+@media(max-width:860px){.app{grid-template-columns:1fr}}
+.pn{background:var(--p);border:1px solid var(--ln);border-radius:12px;padding:12px;margin-bottom:12px}
+.pn h3{margin:0 0 8px;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--mu)}
+label{font-size:.68rem;color:var(--mu);display:block;margin:7px 0 2px}
+input,select{width:100%;padding:6px 8px;border:1px solid var(--ln);border-radius:7px;background:var(--p2);color:var(--ink);font:inherit}
+input[type=checkbox],input[type=range]{width:auto;padding:0}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:7px 12px;font:inherit;font-weight:600;cursor:pointer}
+.btn.s{background:var(--p2);color:var(--ink);font-weight:500;padding:5px 10px;font-size:.78rem}.btn.s.on{background:var(--ac);color:#fff}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.hl{border:1.5px solid transparent;border-radius:9px;padding:6px;margin-top:6px;background:var(--p2);cursor:pointer}.hl.on{border-color:var(--ac)}
+.hl small{color:var(--mu)}.il{display:flex;gap:6px;align-items:center;padding:3px 4px;border-radius:6px;font-size:.78rem}.il.on{background:var(--p);outline:1px solid var(--ac)}
+.il u{margin-left:auto;text-decoration:none;color:var(--mu)}
+.split{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px}@media(max-width:1000px){.split{grid-template-columns:1fr}}
+.tb{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}.tb input[type=text]{width:130px}.tb select{width:auto}
+.vw{position:relative;line-height:0;touch-action:none;user-select:none}.vw>img{width:100%;display:block;border-radius:8px}.lay{position:absolute;inset:0}
+.tag{position:absolute;transform:translate(-50%,-50%);font:600 10px/1.3 system-ui;color:#fff;padding:1px 5px;border-radius:4px;white-space:nowrap;pointer-events:none}
+.hd{position:absolute;width:13px;height:13px;border-radius:50%;background:#fff;border:2px solid var(--ac);transform:translate(-50%,-50%);cursor:grab}
+table{width:100%;border-collapse:collapse;font-size:.78rem}td,th{padding:4px 5px;border-bottom:1px solid var(--ln);text-align:left}
+.rb{height:6px;background:var(--p2);border-radius:3px}.rb i{display:block;height:100%;border-radius:3px}
+.ch{display:inline-block;background:var(--p2);border-radius:99px;padding:2px 9px;font-size:.72rem;margin:2px 3px 2px 0}
+.mu{color:var(--mu)}.ck{display:inline-flex;align-items:center;gap:4px;margin:0;font-size:.78rem;color:var(--ink)}
+#cv{position:relative;height:540px;border-radius:10px;overflow:hidden;background:linear-gradient(#1b2330,#0d1016)}#cv canvas{display:block;width:100%;height:100%}
+.tip{position:absolute;pointer-events:none;background:#000c;color:#fff;font-size:.72rem;padding:4px 8px;border-radius:6px;display:none;line-height:1.3}
+.lg span{display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:.72rem}.lg i{width:10px;height:10px;border-radius:50%;display:inline-block}
+</style></head><body>
+<header><b>⛏️ Core Vision Studio</b>
+ <select id="pj"></select><input id="pname" placeholder="New project name"><button class="btn s" id="npj">Create</button>
+ <span class="sp"></span>
+ <button class="btn s on" id="t1">Logging</button><button class="btn s" id="t2">3D model</button>
+ <button class="btn s" id="ex1">CSV</button><button class="btn s" id="ex2">JSON</button></header>
+<div id="v1" class="app">
+ <aside>
+  <div class="pn"><h3>Holes</h3><div id="holes"></div>
+   <label>New hole</label><input id="hn" placeholder="Name e.g. DDH-001">
+   <div class="g3"><div><label>Easting</label><input id="hx" value="0"></div><div><label>Northing</label><input id="hy" value="0"></div><div><label>RL (m)</label><input id="hz" value="0"></div></div>
+   <div class="g3"><div><label>Azimuth °</label><input id="haz" value="90"></div><div><label>Dip ° down</label><input id="hdip" value="60"></div><div><label>Length m</label><input id="hlen" value="150"></div></div>
+   <button class="btn" id="nh" style="margin-top:8px;width:100%">Add hole</button></div>
+  <div class="pn"><h3>Add core image</h3><div id="ahole" class="mu"></div>
+   <div class="g2"><div><label>From (m)</label><input id="afrom" inputmode="decimal"></div><div><label>To (m)</label><input id="ato" inputmode="decimal"></div></div>
+   <label>Depth increases</label><select id="adir"><option value="lr">left to right</option><option value="rl">right to left</option><option value="tb">top to bottom</option><option value="bt">bottom to top</option></select>
+   <label>Deposit style</label><select id="adep"><option value="">Open</option><option>Orogenic gold</option><option>Epithermal gold</option><option>Porphyry Cu-Au</option><option>VMS base metals</option><option>Iron ore</option><option>Ni sulphide</option><option>Li pegmatite</option></select>
+   <label>Photo</label><input id="afile" type="file" accept="image/*">
+   <button class="btn" id="addgo" style="margin-top:8px;width:100%">Add and analyze</button><div id="ast" class="mu" style="margin-top:6px;font-size:.75rem"></div></div>
+ </aside>
+ <main id="main"></main>
+</div>
+<div id="v2" hidden style="max-width:1360px;margin:0 auto;padding:12px 14px 40px"><div class="pn">
+ <div class="tb"><button class="btn s" id="pl">▶ Drill</button><input id="dsl" type="range" min="0" max="100" step="0.1" value="100" style="width:220px"><span id="dro" class="mu"></span>
+  <select id="spd"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select>
+  <label class="ck"><input type="checkbox" id="cq" checked> correlation</label><label class="ck"><input type="checkbox" id="cs" checked> core segments</label><button class="btn s" id="rv">Reset view</button></div>
+ <div id="cv"><div id="tip" class="tip"></div></div>
+ <div class="lg" style="margin-top:8px"><span><i style="background:#ff8a3d"></i>mineralization</span><span><i style="background:#4c8dff"></i>vein</span><span><i style="background:#2fbf9b"></i>alteration</span><span><i style="background:#ff4d6a"></i>structure</span><span><i style="background:#9aa3b2"></i>lithology</span><span class="mu">drag to orbit · wheel to zoom · depths come from each image’s from/to</span></div></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+const COL={mineralization:'#ff8a3d',alteration:'#2fbf9b',vein:'#4c8dff',structure:'#ff4d6a',lithology:'#9aa3b2'};
+const OPEN=c=>c==='vein'||c==='structure',uid=()=>Math.random().toString(36).slice(2,9),num=v=>Number.isFinite(+v)?+v:0;
+let S={projects:[]},P=null,H=null,IM=null,sel=null,mode='edit',lay=null,tmp=null,T=null;
+/* ---------- storage (IndexedDB, falls back to memory) ---------- */
+const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open('corevision',1);r.onupgradeneeded=()=>r.result.createObjectStore('k');r.onsuccess=()=>res(r.result);r.onerror=()=>rej()});
+async function load(){try{const d=await idb();return await new Promise(r=>{const q=d.transaction('k').objectStore('k').get('S');q.onsuccess=()=>r(q.result);q.onerror=()=>r()})}catch(e){}}
+let svT;function save(){clearTimeout(svT);svT=setTimeout(async()=>{try{const d=await idb();const c=JSON.parse(JSON.stringify(S,(k,v)=>k==='blob'||k==='_u'?undefined:v));
+  /* blobs are stored separately by image id */const tx=d.transaction('k','readwrite'),o=tx.objectStore('k');o.put(c,'S');
+  S.projects.forEach(p=>p.holes.forEach(h=>h.imgs.forEach(i=>o.put(i.blob,'b'+i.id))))}catch(e){}},400)}
+async function loadAll(){const s=await load();if(!s)return;S=s;try{const d=await idb();for(const p of S.projects)for(const h of p.holes)for(const i of h.imgs)i.blob=await new Promise(r=>{const q=d.transaction('k').objectStore('k').get('b'+i.id);q.onsuccess=()=>r(q.result);q.onerror=()=>r()})}catch(e){}}
+const urlOf=im=>im._u||(im._u=URL.createObjectURL(im.blob));
+/* ---------- geometry helpers ---------- */
+const cen=pts=>[pts.reduce((s,p)=>s+p[0],0)/pts.length,pts.reduce((s,p)=>s+p[1],0)/pts.length];
+function pathD(pts,closed){const n=pts.length;if(n<3)return'M'+pts.map(p=>p.join(' ')).join('L');
+  const g=i=>closed?pts[(i+n*2)%n]:pts[Math.max(0,Math.min(n-1,i))];let d='M'+g(0).join(' ');
+  for(let i=0;i<(closed?n:n-1);i++){const a=g(i-1),b=g(i),c=g(i+1),e=g(i+2);d+=`C${b[0]+(c[0]-a[0])/6} ${b[1]+(c[1]-a[1])/6} ${c[0]-(e[0]-b[0])/6} ${c[1]-(e[1]-b[1])/6} ${c[0]} ${c[1]}`}
+  return d+(closed?'Z':'')}
+function dep(im,a){const f=parseFloat(im.from),t=parseFloat(im.to);if(!isFinite(f)||!isFinite(t))return null;
+  const dir=im.dir||'lr',v=dir==='lr'||dir==='rl',cb=((im.res&&im.res.core_boxes)||[]).filter(b=>Array.isArray(b)&&b.length===4).map(b=>b.map(Number));
+  const lo=cb.length?Math.min(...cb.map(b=>v?b[0]:b[1])):0,hi=cb.length?Math.max(...cb.map(b=>v?b[2]:b[3])):1000;
+  const n=x=>{const u=Math.min(1,Math.max(0,(x-lo)/Math.max(1,hi-lo)));return(dir==='rl'||dir==='bt')?1-u:u};
+  const xs=a.pts.map(p=>f+n(v?p[0]:p[1])*(t-f));return[Math.min(...xs),Math.max(...xs)]}
+const dTxt=(im,a)=>{const d=dep(im,a);return d?d[0].toFixed(2)+(d[1]-d[0]>.004?'–'+d[1].toFixed(2):'')+' m':''};
+/* ---------- projects & holes ---------- */
+function pjSel(){const s=$('pj');s.textContent='';if(!S.projects.length){const o=el('option',null,'No project');s.append(o)}S.projects.forEach(p=>{const o=el('option',null,p.name);o.value=p.id;s.append(o)});if(P)s.value=P.id}
+function setP(p){P=p;H=p&&p.holes[0]||null;IM=H&&H.imgs[0]||null;sel=null;if(P)$('adep').value=P.dep||'';all()}
+$('npj').onclick=()=>{const n=$('pname').value.trim();if(!n)return;const p={id:uid(),name:n,dep:'',holes:[]};S.projects.push(p);$('pname').value='';save();setP(p)};
+$('pj').onchange=()=>{const p=S.projects.find(p=>p.id===$('pj').value);if(p)setP(p)};
+$('adep').onchange=()=>{if(P){P.dep=$('adep').value;save()}};
+$('nh').onclick=()=>{if(!P){$('ast').textContent='Create a project first.';return}const n=$('hn').value.trim();if(!n)return;
+  const h={id:uid(),name:n,x:num($('hx').value),y:num($('hy').value),z:num($('hz').value),az:num($('haz').value),dip:num($('hdip').value),len:Math.max(1,num($('hlen').value)),imgs:[]};
+  P.holes.push(h);H=h;IM=null;$('hn').value='';save();all()};
+function holesUI(){const w=$('holes');w.textContent='';if(!P){w.append(el('div','mu','Create a project to begin.'));return}
+  P.holes.forEach(h=>{const d=el('div','hl'+(h===H?' on':''));d.append(el('b',null,h.name),el('small',null,`  E${h.x} N${h.y} RL${h.z} · az ${h.az}° dip ${h.dip}° · ${h.len} m`));
+    d.onclick=()=>{H=h;IM=h.imgs[0]||null;sel=null;all()};
+    h.imgs.forEach(im=>{const r=el('div','il'+(im===IM?' on':''));r.append(el('span',null,`${im.from||'?'}–${im.to||'?'} m`),el('span','mu',im.name.slice(0,14)),el('span','mu',`${im.A.length} ft`));
+      const x=el('u',null,'×');x.onclick=e=>{e.stopPropagation();h.imgs.splice(h.imgs.indexOf(im),1);if(IM===im)IM=h.imgs[0]||null;save();all()};r.append(x);
+      r.onclick=e=>{e.stopPropagation();H=h;IM=im;sel=null;all()};d.append(r)});
+    w.append(d)});
+  $('ahole').textContent=H?'Adding to: '+H.name:'Select or add a hole.';
+  if(H&&!$('afrom').value&&H.imgs.length)$('afrom').value=H.imgs[H.imgs.length-1].to||''}
+/* ---------- analysis ---------- */
+async function shrink(f){const b=await createImageBitmap(f),s=Math.min(1,1568/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*s);c.height=Math.round(b.height*s);c.getContext('2d').drawImage(b,0,0,c.width,c.height);return new Promise(r=>c.toBlob(r,'image/jpeg',.88))}
+const ctxS=im=>{const h=P.holes.find(h=>h.imgs.includes(im));return[P.name&&'project '+P.name,h&&'hole '+h.name+(h?' dip '+h.dip+' az '+h.az:''),im.from&&im.to&&'depth '+im.from+'-'+im.to+' m',P.dep&&'deposit: '+P.dep].filter(Boolean).join('; ')};
+const P1=im=>`Expert exploration geologist logging drill core from a photo. Context: ${ctxS(im)}.
+ROCK CORE ONLY: never annotate trays, boxes, blocks, labels, rulers, hands or background. Terse: numbers or phrases of max 6 words. conf 0-100.
+Coordinates are integers 0-1000 normalized to the image (x right, y down). Outline each feature with a polygon of 8-20 points that FOLLOWS its real irregular boundary (not a rectangle). Veins, fractures and structures are open polylines tracing the feature (closed:false). Give 6-16 features, only on core.
+Return ONLY JSON:
+{"core_boxes":[[0,0,0,0]],"headline":"max 12 words","kpi":{"sulphide_pct":0,"vein_pct":0,"alteration_score":0,"prospectivity":0},
+"minerals":[{"name":"","pct":0,"conf":0,"style":""}],"lithology":[{"unit":"","pct":0}],
+"annotations":[{"label":"","category":"mineralization|alteration|vein|structure|lithology","conf":0,"closed":true,"pts":[[0,0]]}]}`;
+const parse=t=>{t=t.replace(/```json|```/g,'');return JSON.parse(t.slice(t.indexOf('{'),t.lastIndexOf('}')+1))};
+function mkA(r){const cb=(r.core_boxes||[]).filter(b=>Array.isArray(b)&&b.length===4).map(b=>b.map(Number));
+  return(r.annotations||[]).filter(a=>COL[a.category]&&Array.isArray(a.pts)&&a.pts.length>=2&&a.pts.every(p=>Array.isArray(p)&&p.length===2&&p.every(n=>isFinite(+n))))
+   .map(a=>({id:uid(),label:String(a.label||'feature'),cat:a.category,p:Math.round(num(a.conf)),closed:!OPEN(a.category)&&a.closed!==false,pts:a.pts.map(p=>p.map(n=>Math.min(1000,Math.max(0,+n))))}))
+   .filter(a=>{if(!cb.length)return true;const c=cen(a.pts);return cb.some(b=>c[0]>=b[0]-15&&c[0]<=b[2]+15&&c[1]>=b[1]-15&&c[1]<=b[3]+15)})}
+async function analyze(im){const st=$('ast');st.textContent='Analyzing…';
+  try{const s=await claude.use('sample');if(!s){st.textContent='AI unavailable in this view.';return}
+    const o=await s(P1(im),{images:[im.blob],modelTier:'complex',cache:false});im.res=parse(o.text);im.A=mkA(im.res);sel=null;st.textContent='';save();all()}
+  catch(e){st.textContent='Analysis failed'+(e&&e.code?' ('+e.code+')':'')+'. Use Re-analyze.'}}
+$('addgo').onclick=async()=>{const f=$('afile').files[0];if(!H||!f){$('ast').textContent='Pick a hole and a photo.';return}
+  const blob=await shrink(f),im={id:uid(),name:f.name,blob,from:$('afrom').value,to:$('ato').value,dir:$('adir').value,res:null,A:[]};
+  H.imgs.push(im);IM=im;sel=null;$('afile').value='';$('afrom').value=im.to;$('ato').value='';save();all();await analyze(im)};
+/* ---------- logging view with freeform editor ---------- */
+const pn=(t,...n)=>{const p=el('div','pn');p.append(el('h3',null,t),...n);return p};
+function main(){const m=$('main');m.textContent='';
+  if(!P||!IM){m.append(pn('Workflow',el('div','mu','1 Create a project · 2 Add a hole with collar, azimuth, dip, length · 3 Add core photos one at a time with their depth range · 4 Review and edit annotations · 5 Open the 3D model.')));return}
+  const left=el('div','pn'),tb=el('div','tb');
+  [['view','View'],['edit','Edit'],['draw','Draw']].forEach(([k,l])=>{const b=el('button','btn s'+(mode===k?' on':''),l);b.onclick=()=>{mode=k;if(k==='view')sel=null;main()};tb.append(b)});
+  const dc=el('select');dc.id='dcat';Object.keys(COL).forEach(c=>{const o=el('option',null,c);o.value=c;dc.append(o)});const dl=el('input');dl.type='text';dl.id='dlab';dl.placeholder='label for new';
+  const ra=el('button','btn s','Re-analyze');ra.onclick=()=>analyze(IM);
+  const fm=el('select');[['lr','depth →'],['rl','depth ←'],['tb','depth ↓'],['bt','depth ↑']].forEach(([v,t])=>{const o=el('option',null,t);o.value=v;fm.append(o)});fm.value=IM.dir||'lr';fm.onchange=()=>{IM.dir=fm.value;save();insp()};
+  tb.append(dc,dl,fm,ra);left.append(tb);
+  const vw=el('div','vw'),img=el('img');img.src=urlOf(IM);vw.append(img);lay=el('div','lay');vw.append(lay);left.append(vw);
+  left.append(el('div','mu','Edit: click a shape, drag points or the shape, double-click an edge to add a point, double-click a point to delete. Draw: sketch freehand around the area.'));
+  lay.onpointerdown=e=>{if(mode!=='draw')return;e.preventDefault();const pts=[xy(e)];tmp=pts;
+    const mv=ev=>{const q=xy(ev),l=pts[pts.length-1];if(Math.hypot(q[0]-l[0],q[1]-l[1])>7){pts.push(q);ov()}},up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);tmp=null;finish(pts)};
+    addEventListener('pointermove',mv);addEventListener('pointerup',up)};
+  const side=el('div');side.id='insp';m.append(Object.assign(el('div','split'),{}));m.firstChild.append(left,side);ov();insp()}
+const xy=e=>{const r=lay.getBoundingClientRect();return[Math.min(1000,Math.max(0,(e.clientX-r.left)/r.width*1000)),Math.min(1000,Math.max(0,(e.clientY-r.top)/r.height*1000))]};
+function finish(pts){if(pts.length<4){ov();return}const k=Math.ceil(pts.length/28),r=pts.filter((_,i)=>i%k===0),cat=$('dcat').value;
+  const a={id:uid(),label:$('dlab').value||cat,cat,p:100,closed:!OPEN(cat),pts:r,user:1};IM.A.push(a);sel=a;mode='edit';save();all()}
+function drag(e,fn){e.preventDefault();const mv=ev=>{fn(xy(ev));ov()},up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);save();insp()};addEventListener('pointermove',mv);addEventListener('pointerup',up)}
+function ov(){if(!lay)return;lay.textContent='';const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 1000 1000');svg.setAttribute('preserveAspectRatio','none');svg.style.cssText='position:absolute;inset:0;width:100%;height:100%';
+  const mk=(d,c,fill,fo,w,dash)=>{const p=document.createElementNS(NS,'path');p.setAttribute('d',d);p.setAttribute('fill',fill?c:'none');p.setAttribute('fill-opacity',fo);p.setAttribute('stroke',c);p.setAttribute('stroke-width',w);p.setAttribute('vector-effect','non-scaling-stroke');p.setAttribute('stroke-linejoin','round');if(dash)p.setAttribute('stroke-dasharray',dash);return p};
+  IM.A.forEach(a=>{const c=COL[a.cat],p=mk(pathD(a.pts,a.closed),c,a.closed,a===sel?.42:.2,a===sel?3.5:2,a.p>=70?'':a.p>=40?'7 4':'2 4');
+    p.style.cssText='cursor:pointer;pointer-events:'+(a.closed?'all':'stroke');
+    p.onpointerdown=e=>{if(mode==='draw')return;e.stopPropagation();sel=a;if(mode==='edit'){const s=xy(e),o=a.pts.map(q=>q.slice());ov();insp();drag(e,q=>{a.pts=o.map(r=>[Math.min(1000,Math.max(0,r[0]+q[0]-s[0])),Math.min(1000,Math.max(0,r[1]+q[1]-s[1]))])})}else{ov();insp()}};
+    p.ondblclick=e=>{if(mode!=='edit')return;const q=xy(e),n=a.pts.length;let bi=0,bd=1e9;for(let i=0;i<(a.closed?n:n-1);i++){const A=a.pts[i],B=a.pts[(i+1)%n],d=((A[0]+B[0])/2-q[0])**2+((A[1]+B[1])/2-q[1])**2;if(d<bd){bd=d;bi=i}}a.pts.splice(bi+1,0,q);ov();save()};
+    svg.append(p)});
+  if(tmp&&tmp.length>1)svg.append(mk('M'+tmp.map(p=>p.join(' ')).join('L'),'#ffd23f',false,0,2.5));
+  lay.append(svg);
+  IM.A.forEach(a=>{const c=cen(a.pts),t=el('div','tag',`${a.label} ${a.p}%`);t.style.cssText=`left:${c[0]/10}%;top:${c[1]/10}%;background:${COL[a.cat]}`;lay.append(t)});
+  if(mode==='edit'&&sel&&IM.A.includes(sel))sel.pts.forEach((p,i)=>{const h=el('div','hd');h.style.cssText=`left:${p[0]/10}%;top:${p[1]/10}%`;h.onpointerdown=e=>{e.stopPropagation();drag(e,q=>{sel.pts[i]=q})};
+    h.ondblclick=e=>{e.stopPropagation();if(sel.pts.length>(sel.closed?3:2)){sel.pts.splice(i,1);ov();save()}};lay.append(h)})}
+function insp(){const b=$('insp');if(!b)return;b.textContent='';const r=IM.res||{},k=r.kpi||{};
+  if(sel&&IM.A.includes(sel)){const a=sel,c=el('div','pn');c.append(el('h3',null,'Edit annotation'));
+    const l=el('input');l.value=a.label;l.oninput=()=>{a.label=l.value;ov();save()};
+    const cs=el('select');Object.keys(COL).forEach(x=>{const o=el('option',null,x);o.value=x;cs.append(o)});cs.value=a.cat;cs.onchange=()=>{a.cat=cs.value;a.closed=!OPEN(a.cat);ov();save();insp()};
+    const rg=el('input');rg.type='range';rg.min=0;rg.max=100;rg.value=a.p;const rv=el('span','mu',a.p+'%');rg.oninput=()=>{a.p=+rg.value;rv.textContent=a.p+'%';ov();save()};
+    const sc=f=>{const q=cen(a.pts);a.pts=a.pts.map(p=>[Math.min(1000,Math.max(0,q[0]+(p[0]-q[0])*f)),Math.min(1000,Math.max(0,q[1]+(p[1]-q[1])*f))]);ov();save()};
+    const bt=(t,f)=>{const x=el('button','btn s',t);x.onclick=f;return x};
+    c.append(el('label',null,'Label'),l,el('label',null,'Category'),cs,el('label',null,'Confidence'),rg,rv,el('div','mu','Depth '+(dTxt(IM,a)||'set from/to')));
+    const row=el('div','tb');row.style.marginTop='8px';row.append(bt('Grow',()=>sc(1.12)),bt('Shrink',()=>sc(.89)),bt('Verified',()=>{a.p=100;rg.value=100;rv.textContent='100%';ov();save()}),bt('Delete',()=>{IM.A.splice(IM.A.indexOf(a),1);sel=null;save();ov();insp()}),bt('Done',()=>{sel=null;ov();insp()}));
+    c.append(row);b.append(c);return}
+  const s=el('div','pn');s.append(el('h3',null,'Summary'),el('div',null,r.headline||'Not analyzed yet'));
+  [['Sulphides',k.sulphide_pct+'%'],['Veins',k.vein_pct+'%'],['Alteration',k.alteration_score+'/5'],['Prospect.',k.prospectivity]].forEach(([a,v])=>{if(r.kpi)s.append(el('span','ch',a+' '+v))});
+  const mins=r.minerals||[];if(mins.length){const t=el('table');mins.forEach((x,i)=>{const tr=el('tr');tr.append(el('td',null,x.name),el('td',null,num(x.pct)+'%'),el('td',null,num(x.conf)+'%'));const d=el('td'),rb=el('div','rb'),bi=el('i');bi.style.width=Math.min(100,num(x.pct))+'%';bi.style.background=Object.values(COL)[i%5];rb.append(bi);d.append(rb);tr.append(d);t.append(tr)});s.append(t)}
+  b.append(s);const l=el('div','pn');l.append(el('h3',null,'Annotations ('+IM.A.length+')'));
+  IM.A.forEach(a=>{const r=el('div','il');const d=el('i');d.style.cssText='width:9px;height:9px;border-radius:50%;background:'+COL[a.cat];r.append(d,el('span',null,a.label),el('span','mu',a.p+'%'),el('u',null,dTxt(IM,a)));r.style.cursor='pointer';r.onclick=()=>{sel=a;mode='edit';main()};l.append(r)});b.append(l)}
+/* ---------- 3D model, drilling simulation, cross-hole correlation ---------- */
+function build3d(){const box=$('cv'),tip=$('tip');if(T){T.stop();T=null}[...box.children].forEach(c=>c!==tip&&c.remove());
+  const hs=P?P.holes:[];if(!hs.length){const m=el('div','mu','Add a hole (collar E/N/RL, azimuth, dip, length) to see it here.');m.style.padding='16px';box.append(m);return}
+  let R;try{R=new THREE.WebGLRenderer({antialias:true})}catch(e){const m=el('div','mu','WebGL is unavailable in this browser.');m.style.padding='16px';box.append(m);return}
+  box.prepend(R.domElement);const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(50,1,.1,1e6),V=(x,y,z)=>new THREE.Vector3(x,y,z),Y=V(0,1,0);
+  const dir=h=>{const a=h.az*Math.PI/180,d=h.dip*Math.PI/180;return V(Math.sin(a)*Math.cos(d),-Math.sin(d),-Math.cos(a)*Math.cos(d))};
+  const pos=(h,d)=>V(h.x,h.z,-h.y).addScaledVector(dir(h),d);
+  const pts=[];hs.forEach(h=>pts.push(pos(h,0),pos(h,h.len)));const bb=new THREE.Box3().setFromPoints(pts),ctr=bb.getCenter(V(0,0,0)),sz=bb.getSize(V(0,0,0)),span=Math.max(sz.x,sz.y,sz.z,30),r0=span/450;
+  sc.add(new THREE.AmbientLight(0xffffff,.65));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(1,2,1);sc.add(dl);
+  const grid=new THREE.GridHelper(span*1.8,18,0x8a93a5,0x3a4150);grid.position.set(ctr.x,bb.max.y,ctr.z);sc.add(grid);
+  const bg=new THREE.BoxGeometry(sz.x+span*.4,sz.y+span*.15,sz.z+span*.4),blk=new THREE.Mesh(bg,new THREE.MeshBasicMaterial({color:0x8a6d3b,transparent:true,opacity:.07,depthWrite:false}));blk.position.copy(ctr);sc.add(blk);
+  const ed=new THREE.LineSegments(new THREE.EdgesGeometry(bg),new THREE.LineBasicMaterial({color:0x8a6d3b,transparent:true,opacity:.5}));ed.position.copy(ctr);sc.add(ed);
+  const cyl=(r,col,op)=>new THREE.Mesh(new THREE.CylinderGeometry(r,r,1,10),new THREE.MeshLambertMaterial({color:col,transparent:op<1,opacity:op}));
+  const label=(t,p)=>{const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');g.font='600 30px system-ui';g.fillStyle='#fff';g.fillText(t,6,42);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false}));s.scale.set(span*.18,span*.045,1);s.position.copy(p).add(V(0,span*.04,0));sc.add(s)};
+  const HO=[],SG=[],QD=[],hit=[];
+  hs.forEach(h=>{const base=cyl(r0,0xbfc5d0,1);base.quaternion.setFromUnitVectors(Y,dir(h));sc.add(base);
+    const bit=new THREE.Mesh(new THREE.ConeGeometry(r0*3,r0*8,12),new THREE.MeshLambertMaterial({color:0xffd23f}));bit.quaternion.setFromUnitVectors(Y,dir(h));sc.add(bit);
+    const ft=new THREE.Mesh(new THREE.BoxGeometry(r0*10,r0*14,r0*10),new THREE.MeshLambertMaterial({color:0xff8a3d}));ft.position.copy(pos(h,0));sc.add(ft);label(h.name,pos(h,0));
+    const o={h,base,bit};HO.push(o);
+    h.imgs.forEach(im=>im.A.forEach(a=>{const d=dep(im,a);if(!d||a.cat==='lithology')return;const d1=Math.max(d[1],d[0]+Math.max(.15,h.len/250)),m=cyl(r0*1.9,parseInt(COL[a.cat].slice(1),16),.95);m.quaternion.setFromUnitVectors(Y,dir(h));m.userData={t:`${a.label} · ${a.cat} · ${a.p}%<br>${h.name} ${d[0].toFixed(1)}–${d[1].toFixed(1)} m`};sc.add(m);const s={m,h,d0:d[0],d1,a};SG.push(s);hit.push(m)}))});
+  /* correlation: join same-label mineralization between each hole and its nearest neighbour */
+  const seen={};hs.forEach((h,i)=>{let bj=-1,bd=1e18;hs.forEach((g,j)=>{if(j===i)return;const d=pos(h,0).distanceToSquared(pos(g,0));if(d<bd){bd=d;bj=j}});if(bj<0)return;const key=[i,bj].sort().join('-');if(seen[key])return;seen[key]=1;const g=hs[bj];
+    const best=hh=>{const m={};SG.filter(s=>s.h===hh&&(s.a.cat==='mineralization'||s.a.cat==='vein')).forEach(s=>{const k=s.a.label.toLowerCase();if(!m[k]||s.a.p>m[k].a.p)m[k]=s});return m},A=best(h),B=best(g);
+    Object.keys(A).forEach(k=>{if(!B[k])return;const a=A[k],b=B[k],gm=new THREE.BufferGeometry(),v=[pos(a.h,a.d0),pos(a.h,a.d1),pos(b.h,b.d1),pos(b.h,b.d0)];
+      gm.setFromPoints([v[0],v[1],v[2],v[0],v[2],v[3]]);gm.computeVertexNormals();const q=new THREE.Mesh(gm,new THREE.MeshBasicMaterial({color:parseInt(COL[a.a.cat].slice(1),16),transparent:true,opacity:.32,side:THREE.DoubleSide,depthWrite:false}));sc.add(q);QD.push({m:q,at:Math.max(a.d0,b.d0)})})});
+  const maxL=Math.max(...hs.map(h=>h.len));let cur=maxL,play=false,showQ=true,showS=true;const sl=$('dsl');sl.max=maxL;sl.value=maxL;
+  const upd=()=>{HO.forEach(o=>{const L=Math.max(.001,Math.min(cur,o.h.len));o.base.scale.set(1,L,1);o.base.position.copy(pos(o.h,L/2));o.bit.position.copy(pos(o.h,L+r0*4))});
+    SG.forEach(s=>{const e=Math.min(s.d1,cur,s.h.len),v=showS&&e>s.d0;s.m.visible=v;if(v){s.m.scale.set(1,e-s.d0,1);s.m.position.copy(pos(s.h,s.d0+(e-s.d0)/2))}});QD.forEach(q=>q.m.visible=showQ&&cur>=q.at);$('dro').textContent='bit depth '+cur.toFixed(1)+' m'};
+  let th=.8,ph=1.05,rad=span*1.7;const camU=()=>{cam.position.set(ctr.x+rad*Math.sin(ph)*Math.cos(th),ctr.y+rad*Math.cos(ph),ctr.z+rad*Math.sin(ph)*Math.sin(th));cam.lookAt(ctr)};
+  const cv=R.domElement;let dr=null;cv.onpointerdown=e=>{dr=[e.clientX,e.clientY];cv.setPointerCapture(e.pointerId)};cv.onpointerup=()=>dr=null;
+  cv.onpointermove=e=>{if(dr){th-=(e.clientX-dr[0])*.008;ph=Math.min(3,Math.max(.05,ph-(e.clientY-dr[1])*.008));dr=[e.clientX,e.clientY];tip.style.display='none';return}
+    const r=cv.getBoundingClientRect(),rc=new THREE.Raycaster();rc.setFromCamera({x:(e.clientX-r.left)/r.width*2-1,y:-((e.clientY-r.top)/r.height)*2+1},cam);const h=rc.intersectObjects(hit.filter(m=>m.visible))[0];
+    if(h){tip.innerHTML=h.object.userData.t;tip.style.display='block';tip.style.left=(e.clientX-r.left+12)+'px';tip.style.top=(e.clientY-r.top+12)+'px'}else tip.style.display='none'};
+  cv.onwheel=e=>{e.preventDefault();rad=Math.max(span*.1,Math.min(span*8,rad*(1+Math.sign(e.deltaY)*.1)))};
+  const rs=()=>{const w=box.clientWidth,h=box.clientHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()};const ro=new ResizeObserver(rs);ro.observe(box);rs();
+  let raf,last=performance.now();const loop=t=>{raf=requestAnimationFrame(loop);const dt=(t-last)/1000;last=t;if(play){cur+=dt*maxL/25*(+$('spd').value);if(cur>=maxL){cur=maxL;play=false;$('pl').textContent='▶ Drill'}sl.value=cur}upd();camU();R.render(sc,cam)};raf=requestAnimationFrame(loop);
+  $('pl').onclick=()=>{if(!play&&cur>=maxL)cur=0;play=!play;$('pl').textContent=play?'❚❚ Pause':'▶ Drill'};sl.oninput=()=>{cur=+sl.value;play=false;$('pl').textContent='▶ Drill'};
+  $('cq').onchange=()=>showQ=$('cq').checked;$('cs').onchange=()=>showS=$('cs').checked;$('rv').onclick=()=>{th=.8;ph=1.05;rad=span*1.7};
+  T={stop(){cancelAnimationFrame(raf);ro.disconnect();R.dispose();cv.remove()}};upd()}
+/* ---------- shell ---------- */
+function all(){pjSel();holesUI();main();if(!$('v2').hidden)build3d()}
+const tab=n=>{$('v1').hidden=n!==1;$('v2').hidden=n!==2;$('t1').classList.toggle('on',n===1);$('t2').classList.toggle('on',n===2);if(n===2)build3d();else if(T){T.stop();T=null}};
+$('t1').onclick=()=>tab(1);$('t2').onclick=()=>tab(2);
+async function exp(kind){try{const dl=await claude.use('downloads');if(!dl||!P)return;
+  if(kind==='csv'){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"',L=['project,hole,easting,northing,rl,azimuth,dip,from_m,to_m,label,category,conf,image'];
+    P.holes.forEach(h=>h.imgs.forEach(im=>im.A.forEach(a=>{const d=dep(im,a);L.push([P.name,h.name,h.x,h.y,h.z,h.az,h.dip,d?d[0].toFixed(3):'',d?d[1].toFixed(3):'',a.label,a.cat,a.p,im.name].map(q).join(','))})));
+    await dl.save({filename:P.name+'-intervals.csv',data:new Blob([L.join('\n')],{type:'text/csv'})})}
+  else await dl.save({filename:P.name+'.json',data:new Blob([JSON.stringify({...P,holes:P.holes.map(h=>({...h,imgs:h.imgs.map(({blob,_u,...r})=>r)}))},null,1)],{type:'application/json'})})}catch(e){}}
+$('ex1').onclick=()=>exp('csv');$('ex2').onclick=()=>exp('json');
+(async()=>{await loadAll();S.projects=S.projects||[];S.projects.forEach(p=>p.holes.forEach(h=>h.imgs.forEach(i=>{delete i._u;i.A=i.A||[]})));setP(S.projects[0]||null)})();
+</script></body></html>
