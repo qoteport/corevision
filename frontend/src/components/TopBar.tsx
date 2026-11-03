@@ -1,12 +1,16 @@
 import { useState } from 'react';
-import { Box, ChevronDown, Download, FolderOpen, LayoutDashboard, Menu as MenuIcon, Plus, Sparkles } from 'lucide-react';
-import { useStore } from '../store';
+import { Box, ChevronDown, Download, FolderOpen, KeyRound, LayoutDashboard, LogOut, Menu as MenuIcon, Plus, Sparkles, Users } from 'lucide-react';
+import { useCanEdit, useStore } from '../store';
+import { ChangePassword } from '../views/AuthScreens';
 import { api } from '../api';
 import { Field, Menu, Modal } from './ui';
 
 export default function TopBar({ onMenu }: { onMenu: () => void }) {
-  const { project, projects, route, navigate, openProject, health } = useStore();
+  const { project, projects, route, navigate, openProject, health, user, orgName, signOut } = useStore();
+  const canEdit = useCanEdit();
   const [creating, setCreating] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
+  const initials = (user?.name || user?.email || '?').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
   const view = route.view === 'model' ? 'model' : 'log';
 
   return (
@@ -29,8 +33,9 @@ export default function TopBar({ onMenu }: { onMenu: () => void }) {
                 <span className="grow ellipsis">{p.name}</span><span className="mu tiny">{p.holes} holes</span>
               </button>
             ))}
-            {projects.length > 0 && <hr />}
-            <button onClick={() => { close(); setCreating(true); }}><Plus size={15} />New project</button>
+            {projects.length > 0 && canEdit && <hr />}
+            {canEdit && <button onClick={() => { close(); setCreating(true); }}><Plus size={15} />New project</button>}
+            {!projects.length && !canEdit && <div className="mu tiny" style={{ padding: 8 }}>No projects yet.</div>}
           </>
         )}
       </Menu>
@@ -59,7 +64,28 @@ export default function TopBar({ onMenu }: { onMenu: () => void }) {
           )}
         </Menu>
       )}
+      <Menu align="right" trigger={(_, toggle) => (
+        <button className="btn ghost" onClick={toggle} aria-label="Account menu" style={{ gap: 8 }}>
+          <span className="avatar">{initials}</span><span className="hide-narrow ellipsis" style={{ maxWidth: 140 }}>{user?.name}</span><ChevronDown size={14} />
+        </button>
+      )}>
+        {close => (
+          <>
+            <div style={{ padding: '8px 9px 6px' }}>
+              <div style={{ fontWeight: 600 }}>{user?.name}</div>
+              <div className="mu tiny">{user?.email}</div>
+              <div className="row tiny" style={{ marginTop: 6 }}><span className="badge">{user?.role}</span><span className="mu ellipsis">{orgName}</span></div>
+            </div>
+            <hr />
+            {user?.role === 'admin' && <button onClick={() => { close(); navigate({ view: 'users' }); }}><Users size={15} />Users & organization</button>}
+            <button onClick={() => { close(); setPwOpen(true); }}><KeyRound size={15} />Change password</button>
+            <hr />
+            <button onClick={() => { close(); signOut(); }}><LogOut size={15} />Sign out</button>
+          </>
+        )}
+      </Menu>
       {creating && <NewProject onClose={() => setCreating(false)} />}
+      {pwOpen && <Modal title="Change password" onClose={() => setPwOpen(false)}><ChangePassword onClose={() => setPwOpen(false)} /></Modal>}
     </header>
   );
 }

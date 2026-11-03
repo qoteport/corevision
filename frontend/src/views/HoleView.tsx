@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Camera, Drill, FlaskConical, ImagePlus, ListTree, Plus, Trash2, X } from 'lucide-react';
-import { useStore } from '../store';
+import { useCanEdit, useStore } from '../store';
 import { api, type Assay, type Direction, type Hole, type InterceptQuery, type Interval } from '../api';
 import { BUSY, fmt, loggedMetres, runText } from '../lib/geo';
 import { Field } from '../components/ui';
@@ -15,6 +15,7 @@ const TABS: [Tab, string, typeof Camera][] = [['core', 'Photos & collar', Camera
 
 export default function HoleView({ holeId }: { holeId: string }) {
   const { project, navigate, dataVersion } = useStore();
+  const canEdit = useCanEdit();
   const hole = project?.holes.find(h => h.id === holeId);
   const [tab, setTab] = useState<Tab>(() => { try { return (sessionStorage.getItem('cv.holeTab') as Tab) || 'core'; } catch { return 'core'; } });
   const [intervals, setIntervals] = useState<Interval[]>([]);
@@ -60,7 +61,7 @@ export default function HoleView({ holeId }: { holeId: string }) {
           {tab === 'core' && <>
             <div className="card">
               <div className="card-h"><h3 className="grow">Core photos</h3></div>
-              <Uploader hole={hole} />
+              {canEdit ? <Uploader hole={hole} /> : <div className="mu tiny">Read-only access: you can view and export, but not add photos.</div>}
               {hole.images.length > 0 && <div className="runs" style={{ marginTop: 14 }}>
                 {hole.images.map(im => (
                   <div key={im.id} className="run" onClick={() => pick(im.id)}>
@@ -152,6 +153,7 @@ function Uploader({ hole }: { hole: Hole }) {
 
 function CollarCard({ hole }: { hole: Hole }) {
   const { patchHole, deleteHole } = useStore();
+  const canEdit = useCanEdit();
   const init = () => ({ name: hole.name, x: String(hole.x), y: String(hole.y), z: String(hole.z), azimuth: String(hole.azimuth), dip: String(hole.dip), length: String(hole.length), core_size: hole.core_size || 'NQ' });
   const sizes = Object.entries(useStore.getState().health?.core_sizes ?? { NQ: 47.6 });
   const [f, setF] = useState(init);
@@ -161,7 +163,7 @@ function CollarCard({ hole }: { hole: Hole }) {
   const n = (v: string, d: number) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : d);
   const save = () => patchHole(hole.id, { name: f.name.trim() || hole.name, x: n(f.x, hole.x), y: n(f.y, hole.y), z: n(f.z, hole.z), azimuth: n(f.azimuth, hole.azimuth), dip: n(f.dip, hole.dip), length: Math.max(1, n(f.length, hole.length)), core_size: f.core_size });
   return (
-    <div className="card">
+    <fieldset className="card plain" disabled={!canEdit}>
       <div className="card-h"><h3 className="grow">Collar</h3>
         <button className="btn ghost sm danger" onClick={() => confirm(`Delete ${hole.name} and its ${hole.images.length} photo(s)?`) && deleteHole(hole.id)}><Trash2 size={13} />Delete hole</button>
       </div>
@@ -179,14 +181,15 @@ function CollarCard({ hole }: { hole: Hole }) {
       </div>
       <div className="row" style={{ marginTop: 12, justifyContent: 'flex-end' }}>
         {dirty && <button className="btn ghost sm" onClick={() => setF(init())}>Discard</button>}
-        <button className="btn sm primary" disabled={!dirty} onClick={save}>Save collar</button>
+        {canEdit && <button className="btn sm primary" disabled={!dirty} onClick={save}>Save collar</button>}
       </div>
-    </div>
+    </fieldset>
   );
 }
 
 function SurveyCard({ hole }: { hole: Hole }) {
   const { saveSurveys } = useStore();
+  const canEdit = useCanEdit();
   const toRows = () => hole.surveys.map(s => [String(s.depth), String(s.azimuth), String(s.dip)]);
   const [rows, setRows] = useState<string[][]>(toRows);
   useEffect(() => setRows(toRows()), [hole.id, hole.surveys]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -198,7 +201,7 @@ function SurveyCard({ hole }: { hole: Hole }) {
     setRows([...rows, last ? [String(Math.min(hole.length, parseFloat(last[0]) + 30 || 0)), last[1], last[2]] : ['0', String(hole.azimuth), String(hole.dip)]]);
   };
   return (
-    <div className="card">
+    <fieldset className="card plain" disabled={!canEdit}>
       <div className="card-h"><h3 className="grow">Downhole survey</h3><span className="mu tiny">minimum curvature</span></div>
       {rows.length > 0 && <div className="survey-row mu tiny"><span>Depth (m)</span><span>Azimuth °</span><span>Dip °</span><span /></div>}
       {rows.map((r, i) => (
@@ -215,6 +218,6 @@ function SurveyCard({ hole }: { hole: Hole }) {
         <button className="btn sm primary" disabled={!dirty || !valid}
           onClick={() => saveSurveys(hole.id, rows.map(r => ({ depth: parseFloat(r[0]), azimuth: parseFloat(r[1]), dip: parseFloat(r[2]) })))}>Save survey</button>
       </div>
-    </div>
+    </fieldset>
   );
 }

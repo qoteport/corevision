@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ChevronLeft, ChevronRight, Drill, Eye, Maximize2, Minus, MousePointer2, PenLine, Plus, Redo2, RectangleHorizontal, Scissors, Sparkles, Trash2, Undo2 } from 'lucide-react';
-import { findImage, useStore } from '../store';
+import { findImage, useCanEdit, useStore } from '../store';
 import { api, type Category, type CoreBreak, type CoreImage, type Direction, type Feature, type Pt } from '../api';
 import { BUSY, CATEGORIES, COLORS, centroid, clamp, depthText, fmt, isOpen, runText, smoothPath, uid } from '../lib/geo';
 import { rqdColor } from './Geotech';
@@ -14,7 +14,9 @@ export default function ImageEditor({ holeId, imageId }: { holeId: string; image
   const { project, navigate, setFeatures, snapshot, dropSnapshot, undo, redo, history, analyze, patchImage, deleteImage, setBreaks, loadGeotech } = useStore();
   const hole = project?.holes.find(h => h.id === holeId);
   const im = findImage(project, imageId);
-  const [mode, setMode] = useState<Mode>('edit');
+  const canEdit = useCanEdit();
+  const [mode, setModeRaw] = useState<Mode>(canEdit ? 'edit' : 'view');
+  const setMode = (m: Mode) => setModeRaw(canEdit ? m : 'view'); // viewers stay in View mode
   const [selId, setSelId] = useState<string | null>(null);
   const [drawCat, setDrawCat] = useState<Category>('mineralization');
   const [drawLabel, setDrawLabel] = useState('');
@@ -35,6 +37,7 @@ export default function ImageEditor({ holeId, imageId }: { holeId: string; image
     const k = (e: KeyboardEvent) => {
       const typing = /INPUT|TEXTAREA|SELECT/.test((document.activeElement as HTMLElement)?.tagName);
       const key = e.key.toLowerCase();
+      if (!canEdit) return;
       if ((e.ctrlKey || e.metaKey) && !typing && key === 'z') { e.preventDefault(); if (e.shiftKey) redo(imageId); else undo(imageId); setSelId(null); return; }
       if ((e.ctrlKey || e.metaKey) && !typing && key === 'y') { e.preventDefault(); redo(imageId); setSelId(null); return; }
       if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -155,12 +158,12 @@ export default function ImageEditor({ holeId, imageId }: { holeId: string; image
             </div>
             <div className="row"><b className="num">{runText(im)}</b><StatusBadge im={im} /></div>
           </div>
-          <RunMeta im={im} onSave={b => patchImage(im.id, b)} />
+          <fieldset className="plain" disabled={!canEdit}><RunMeta im={im} onSave={b => patchImage(im.id, b)} /></fieldset>
           <div className="row">
             <button className="btn sm icon" disabled={!prev} onClick={() => prev && navigate({ view: 'image', holeId, imageId: prev.id })} aria-label="Previous photo" title="Previous photo"><ChevronLeft size={15} /></button>
             <button className="btn sm icon" disabled={!next} onClick={() => next && navigate({ view: 'image', holeId, imageId: next.id })} aria-label="Next photo" title="Next photo"><ChevronRight size={15} /></button>
-            <button className="btn sm primary" disabled={BUSY(im.status)} onClick={() => analyze(im.id)}><Sparkles size={13} />{im.analysis ? 'Re-analyze' : 'Analyze'}</button>
-            <button className="btn sm ghost danger icon" onClick={() => confirm('Delete this photo and its annotations?') && deleteImage(im.id)} aria-label="Delete photo" title="Delete photo"><Trash2 size={14} /></button>
+            {canEdit && <button className="btn sm primary" disabled={BUSY(im.status)} onClick={() => analyze(im.id)}><Sparkles size={13} />{im.analysis ? 'Re-analyze' : 'Analyze'}</button>}
+            {canEdit && <button className="btn sm ghost danger icon" onClick={() => confirm('Delete this photo and its annotations?') && deleteImage(im.id)} aria-label="Delete photo" title="Delete photo"><Trash2 size={14} /></button>}
           </div>
         </div>
 
@@ -216,7 +219,7 @@ export default function ImageEditor({ holeId, imageId }: { holeId: string; image
             {BUSY(im.status) && <div className="busy-veil"><div className="spinner" />{im.status === 'queued' ? 'Queued for analysis…' : 'Claude is logging this core…'}</div>}
           </div>
 
-          <div className="toolbar">
+          <div className="toolbar" hidden={!canEdit}>
             <div className="seg">
               <button className={mode === 'view' ? 'on' : ''} onClick={() => { setMode('view'); setSelId(null); }} title="View (V)"><Eye size={14} />View</button>
               <button className={mode === 'edit' ? 'on' : ''} onClick={() => setMode('edit')} title="Edit (E)"><MousePointer2 size={14} />Edit</button>
@@ -254,7 +257,7 @@ export default function ImageEditor({ holeId, imageId }: { holeId: string; image
       <aside className="inspector">
         {im.status === 'error' && <div className="banner" style={{ margin: 0 }}><span className="err">Analysis failed: {im.error}</span></div>}
         {sel ? (
-          <div className="card">
+          <fieldset className="card plain" disabled={!canEdit}>
             <div className="card-h"><span className="dot" style={{ background: COLORS[sel.category] }} /><h3 className="grow">Annotation</h3>
               <span className="badge">{sel.source}</span>
             </div>
@@ -278,12 +281,12 @@ export default function ImageEditor({ holeId, imageId }: { holeId: string; image
                 <button className="btn sm" onClick={() => setSelId(null)}>Done</button>
               </div>
             </div>
-          </div>
+          </fieldset>
         ) : <>{geoMode ? <GeotechCard im={im} holeSize={hole.core_size || 'NQ'} /> : <Summary im={im} />}</>}
 
         <div className="card">
           <div className="card-h"><h3 className="grow">Annotations · {features.length}</h3>
-            <button className="btn ghost sm" onClick={() => setMode('draw')}><Plus size={13} />Draw</button>
+            {canEdit && <button className="btn ghost sm" onClick={() => setMode('draw')}><Plus size={13} />Draw</button>}
           </div>
           {!features.length && <div className="mu tiny">None yet. Run the AI, or draw one with <kbd>D</kbd>.</div>}
           {[...features].sort((a, b) => (a.from_m ?? 1e9) - (b.from_m ?? 1e9)).map(f => (

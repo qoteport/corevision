@@ -104,14 +104,25 @@ export interface ModelHole {
   assays: { from_m: number; to_m: number; element: string; value: number; unit: string }[];
 }
 
+export type Role = 'admin' | 'geologist' | 'viewer';
+export interface User { id: string; email: string; name: string; role: Role; active: boolean; created_at: number | null; last_login_at: number | null }
+export interface AuthStatus { setup_required: boolean; setup_token_required: boolean; org_name: string; user: User | null }
+
+/** Called when the server says the session is gone, so the app can show the sign-in screen. */
+let onUnauthorized: (() => void) | null = null;
+export const setUnauthorizedHandler = (fn: () => void) => { onUnauthorized = fn; };
+
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const init: RequestInit = { method, headers: {} };
+  // The custom header is required by the server on every write (CSRF protection).
+  const headers: Record<string, string> = { 'X-Requested-With': 'corevision' };
+  const init: RequestInit = { method, headers, credentials: 'same-origin' };
   if (body instanceof FormData) init.body = body;
   else if (body !== undefined) {
-    init.headers = { 'Content-Type': 'application/json' };
+    headers['Content-Type'] = 'application/json';
     init.body = JSON.stringify(body);
   }
   const r = await fetch(path, init);
+  if (r.status === 401 && !path.startsWith('/api/auth/')) onUnauthorized?.();
   if (!r.ok) {
     let msg = `HTTP ${r.status}`;
     try {
@@ -131,6 +142,17 @@ export interface ImagePatch {
 export type FeatureInput = Omit<Feature, 'from_m' | 'to_m'>;
 
 export const api = {
+  authStatus: () => req<AuthStatus>('GET', '/api/auth/status'),
+  setup: (b: { org_name: string; name: string; email: string; password: string; setup_token?: string }) =>
+    req<{ user: User; org_name: string }>('POST', '/api/auth/setup', b),
+  login: (email: string, password: string) => req<{ user: User; org_name: string }>('POST', '/api/auth/login', { email, password }),
+  logout: () => req<{ ok: boolean }>('POST', '/api/auth/logout'),
+  changePassword: (current_password: string, new_password: string) => req<{ ok: boolean }>('POST', '/api/auth/password', { current_password, new_password }),
+  users: () => req<User[]>('GET', '/api/users'),
+  createUser: (b: { email: string; name: string; role: Role; password: string }) => req<User>('POST', '/api/users', b),
+  updateUser: (id: string, b: Partial<{ name: string; role: Role; active: boolean; password: string }>) => req<User>('PATCH', `/api/users/${id}`, b),
+  deleteUser: (id: string) => req<null>('DELETE', `/api/users/${id}`),
+  patchOrg: (name: string) => req<{ name: string }>('PATCH', '/api/org', { name }),
   health: () => req<Health>('GET', '/api/health'),
   projects: () => req<ProjectSummary[]>('GET', '/api/projects'),
   project: (id: string) => req<Project>('GET', `/api/projects/${id}`),

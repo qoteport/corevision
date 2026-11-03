@@ -22,12 +22,6 @@ from app.main import app  # noqa: E402
 ROWS = [[100, 100, 900, 200], [100, 400, 900, 500], [100, 700, 900, 800]]
 
 
-@pytest.fixture(scope="module")
-def client():
-    with TestClient(app) as c:
-        yield c
-
-
 # ---------- depth along a multi-row tray ----------
 
 def test_depth_walks_rows_in_order():

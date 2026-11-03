@@ -5,13 +5,13 @@ import json
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
-from . import ai, assays, config, db, geotech, intervals
+from . import ai, assays, auth, config, db, geotech, intervals
 from .storage import store
 from .geo import CATEGORIES, CORE_DIAMETERS, OPEN_CATEGORIES, desurvey, feature_depth, point_depth
 
@@ -23,6 +23,8 @@ async def lifespan(_app):
 
 
 app = FastAPI(title="Core Vision", version="0.3.0", lifespan=lifespan)
+app.middleware("http")(auth.auth_middleware)
+app.include_router(auth.router)
 app.include_router(intervals.router)
 app.include_router(assays.router)
 app.include_router(geotech.router)
@@ -329,7 +331,7 @@ async def import_surveys(pid: str, file: UploadFile = File(...)):
 # ---------- core images ----------
 
 @app.post("/api/holes/{hid}/images", status_code=201)
-async def upload_image(hid: str, background: BackgroundTasks, file: UploadFile = File(...),
+async def upload_image(hid: str, background: BackgroundTasks, request: Request, file: UploadFile = File(...),
                        from_m: Optional[float] = Form(None), to_m: Optional[float] = Form(None),
                        direction: str = Form("lr"), analyze: bool = Form(True)):
     if direction not in ("lr", "rl", "tb", "bt"):
@@ -350,9 +352,9 @@ async def upload_image(hid: str, background: BackgroundTasks, file: UploadFile =
     with db.tx() as c:
         _get(c, "hole", hid)
         c.execute("INSERT INTO core_image (id, hole_id, name, from_m, to_m, direction, storage_key, width_px, "
-                  "height_px, status, status_at, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                  "height_px, status, status_at, created_at, uploaded_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                   (iid, hid, file.filename or key, from_m, to_m, direction, key, im.width, im.height,
-                   "queued" if analyze else "new", db.now(), db.now()))
+                   "queued" if analyze else "new", db.now(), db.now(), auth.current_user(request)["id"]))
         out = _image_full(c, iid)
     if analyze:
         background.add_task(run_analysis, iid)
@@ -484,8 +486,9 @@ def run_analysis(iid: str) -> None:
 # ---------- features (editor sync with audit trail) ----------
 
 @app.put("/api/images/{iid}/features")
-def sync_features(iid: str, body: list[FeatureIn]):
+def sync_features(iid: str, body: list[FeatureIn], request: Request):
     """Replace the image's feature list with the editor's state. Every change is logged in edit_event."""
+    uid = auth.current_user(request)["id"]
     with db.tx() as c:
         img = _get(c, "core_image", iid)
         boxes = _boxes(img)
@@ -512,8 +515,8 @@ def sync_features(iid: str, body: list[FeatureIn]):
                           "verified=?, updated_at=? WHERE id=?",
                           (new["label"], new["category"], new["confidence"], int(closed), json.dumps(pts),
                            d[0] if d else None, d[1] if d else None, int(f.verified), t, f.id))
-                c.execute("INSERT INTO edit_event (feature_id, image_id, action, before, after, ts) "
-                          "VALUES (?,?,?,?,?,?)", (f.id, iid, "update", json.dumps(before), json.dumps(new), t))
+                c.execute("INSERT INTO edit_event (feature_id, image_id, action, before, after, ts, user_id) "
+                          "VALUES (?,?,?,?,?,?,?)", (f.id, iid, "update", json.dumps(before), json.dumps(new), t, uid))
             else:
                 if c.execute("SELECT 1 FROM feature WHERE id=?", (f.id,)).fetchone():
                     raise HTTPException(409, "feature id belongs to another image")
@@ -522,13 +525,13 @@ def sync_features(iid: str, body: list[FeatureIn]):
                           "source, verified, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                           (f.id, iid, new["label"], f.category, f.confidence, int(closed), json.dumps(pts),
                            d[0] if d else None, d[1] if d else None, source, int(f.verified), t + i * 1e-3, t))
-                c.execute("INSERT INTO edit_event (feature_id, image_id, action, before, after, ts) "
-                          "VALUES (?,?,?,?,?,?)", (f.id, iid, "create", None, json.dumps(new), t))
+                c.execute("INSERT INTO edit_event (feature_id, image_id, action, before, after, ts, user_id) "
+                          "VALUES (?,?,?,?,?,?,?)", (f.id, iid, "create", None, json.dumps(new), t, uid))
         for fid, old in existing.items():
             if fid not in seen:
                 c.execute("DELETE FROM feature WHERE id=?", (fid,))
-                c.execute("INSERT INTO edit_event (feature_id, image_id, action, before, after, ts) "
-                          "VALUES (?,?,?,?,?,?)", (fid, iid, "delete", json.dumps(old), None, t))
+                c.execute("INSERT INTO edit_event (feature_id, image_id, action, before, after, ts, user_id) "
+                          "VALUES (?,?,?,?,?,?,?)", (fid, iid, "delete", json.dumps(old), None, t, uid))
         return _image_full(c, iid)["features"]
 
 

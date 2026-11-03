@@ -1,13 +1,16 @@
 import { create } from 'zustand';
-import { api } from './api';
-import type { CoreBreak, CoreImage, Direction, Feature, Geotech, Health, Hole, HoleInput, ImagePatch, Project, ProjectSummary, Survey } from './api';
+import { api, setUnauthorizedHandler } from './api';
+import type { CoreBreak, CoreImage, Direction, Feature, Geotech, Health, Hole, HoleInput, ImagePatch, Project, ProjectSummary, Survey, User } from './api';
 import { BUSY } from './lib/geo';
 
 export type Route =
   | { view: 'overview' }
   | { view: 'hole'; holeId: string }
   | { view: 'image'; holeId: string; imageId: string }
-  | { view: 'model' };
+  | { view: 'model' }
+  | { view: 'users' };
+
+export type AuthState = 'checking' | 'setup' | 'login' | 'ready';
 
 export interface Toast { id: number; text: string; kind: 'info' | 'error' }
 
@@ -18,12 +21,20 @@ interface State {
   route: Route;
   toasts: Toast[];
   loading: boolean;
+  auth: AuthState;
+  user: User | null;
+  orgName: string;
+  setupTokenRequired: boolean;
+  signedIn(user: User, orgName: string): Promise<void>;
+  signOut(): Promise<void>;
+  setOrgName(name: string): void;
   history: Record<string, { u: string[]; r: string[] }>;
   geotech: Record<string, Geotech>;
   /** Bumped whenever logged data changes, so derived panels (interval log, geotech, assays) refetch. */
   dataVersion: number;
 
   init(): Promise<void>;
+  loadApp(): Promise<void>;
   navigate(r: Route): void;
   toast(text: string, kind?: Toast['kind']): void;
   dismiss(id: number): void;
@@ -136,8 +147,31 @@ export const useStore = create<State>((set, get) => {
 
   return {
     health: null, projects: [], project: null, route: { view: 'overview' }, toasts: [], loading: true, history: {}, geotech: {}, dataVersion: 0,
+    auth: 'checking', user: null, orgName: '', setupTokenRequired: false,
 
     async init() {
+      setUnauthorizedHandler(() => {
+        if (get().auth === 'ready') { set({ auth: 'login', user: null, project: null, projects: [] }); get().toast('Your session ended. Sign in again.', 'error'); }
+      });
+      try {
+        const st = await api.authStatus();
+        set({ orgName: st.org_name, setupTokenRequired: st.setup_token_required });
+        if (st.setup_required) { set({ auth: 'setup', loading: false }); return; }
+        if (!st.user) { set({ auth: 'login', loading: false }); return; }
+        set({ user: st.user, auth: 'ready' });
+      } catch (e) { fail(new Error('Cannot reach the server: ' + (e as Error).message)); set({ auth: 'login', loading: false }); return; }
+      await get().loadApp();
+    },
+    async signedIn(user, orgName) {
+      set({ user, orgName, auth: 'ready', loading: true, route: { view: 'overview' } });
+      await get().loadApp();
+    },
+    async signOut() {
+      try { await api.logout(); } catch { /* already signed out */ }
+      set({ auth: 'login', user: null, project: null, projects: [], route: { view: 'overview' }, history: {}, geotech: {} });
+    },
+    setOrgName(name) { set({ orgName: name }); },
+    async loadApp() {
       try { set({ health: await api.health() }); } catch { set({ health: null }); }
       try {
         const projects = await api.projects();
@@ -307,3 +341,7 @@ export const useStore = create<State>((set, get) => {
     },
   };
 });
+
+/** Viewers are read-only; the server enforces this, the UI just hides the editing tools. */
+export const useCanEdit = () => useStore(s => s.user?.role === 'admin' || s.user?.role === 'geologist');
+export const useIsAdmin = () => useStore(s => s.user?.role === 'admin');

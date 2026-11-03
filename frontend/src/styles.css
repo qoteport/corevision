@@ -223,3 +223,11 @@ table.t tr.click:hover td { background: var(--panel2); }
   .grid3 { grid-template-columns: 1fr 1fr; }
   .topbar { gap: 6px; padding: 0 10px; }
 }
+
+/* ---------- auth ---------- */
+.auth-wrap { min-height: 100%; display: grid; place-items: center; padding: 24px 16px;
+  background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--ac) 10%, transparent), transparent 60%), var(--bg); }
+.auth-card { width: min(440px, 100%); background: var(--panel); border: 1px solid var(--line2); border-radius: 16px; padding: 24px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 18px; }
+.avatar { width: 26px; height: 26px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--acbg); color: var(--ac); font-size: 11px; font-weight: 700; border: 1px solid color-mix(in srgb, var(--ac) 40%, transparent); }
+fieldset.plain { margin: 0; min-width: 0; }
+fieldset.plain:not(.card) { border: 0; padding: 0; }

@@ -57,6 +57,18 @@ else
   echo "    secret exists, keeping it (add a version to rotate: gcloud secrets versions add corevision-anthropic-key --data-file=-)"
 fi
 
+echo "==> First-run setup token"
+# Whoever opens a new deployment first creates the organization and its admin account.
+# The token stops anyone else getting there before you.
+if ! exists gcloud secrets describe corevision-setup-token; then
+  SETUP_TOKEN="$(openssl rand -hex 12)"
+  printf '%s' "$SETUP_TOKEN" | gcloud secrets create corevision-setup-token --replication-policy automatic --data-file=-
+  echo "    Setup token (needed once, on the first-run screen): $SETUP_TOKEN"
+  unset SETUP_TOKEN
+else
+  echo "    exists. Show it with: gcloud secrets versions access latest --secret corevision-setup-token"
+fi
+
 echo "==> Photo bucket gs://$BUCKET (private)"
 exists gcloud storage buckets describe "gs://$BUCKET" ||
   gcloud storage buckets create "gs://$BUCKET" --location "$REGION" --uniform-bucket-level-access \
@@ -69,7 +81,7 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" --member "serviceAccount:$S
   --role roles/cloudsql.client --condition None >/dev/null
 gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" --member "serviceAccount:$SA_EMAIL" \
   --role roles/storage.objectAdmin >/dev/null
-for s in corevision-database-url corevision-anthropic-key; do
+for s in corevision-database-url corevision-anthropic-key corevision-setup-token; do
   gcloud secrets add-iam-policy-binding "$s" --member "serviceAccount:$SA_EMAIL" \
     --role roles/secretmanager.secretAccessor >/dev/null
 done

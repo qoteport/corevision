@@ -29,14 +29,14 @@ steps:
       - --region=${_REGION}
       - --service-account=${_RUN_SA}@$PROJECT_ID.iam.gserviceaccount.com
       - --add-cloudsql-instances=$PROJECT_ID:${_REGION}:${_SQL_INSTANCE}
-      - --set-secrets=DATABASE_URL=corevision-database-url:latest,ANTHROPIC_API_KEY=corevision-anthropic-key:latest
+      - --set-secrets=DATABASE_URL=corevision-database-url:latest,ANTHROPIC_API_KEY=corevision-anthropic-key:latest,CV_SETUP_TOKEN=corevision-setup-token:latest
       - --set-env-vars=CV_GCS_BUCKET=${_BUCKET},CV_DB_POOL_SIZE=5
       - --cpu=1
       - --memory=1Gi
       - --concurrency=40
       - --timeout=900
       - --no-cpu-throttling
-      - --no-allow-unauthenticated
+      # No auth flag here: redeploys keep whatever access setting deploy.sh chose (public app login, or IAP).
 
 images:
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/corevision:$SHORT_SHA

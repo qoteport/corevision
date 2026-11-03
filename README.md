@@ -88,6 +88,26 @@ off. Running on Vercel needs hosted Postgres, blob storage for photos and a job 
 | 3D | Tubes along desurveyed paths, coloured intervals, hover tooltips, drilling simulation with progressive reveal, nearest-neighbour correlation ribbons, orbit/pan/zoom; scene is re-centred so real UTM coordinates render without jitter |
 | Export | Interval log (lithlog) CSV, collars, surveys, assays, geotech (RQD/recovery/FF) and photo-feature CSVs, project JSON |
 
+## Accounts and login
+
+Each deployment is for **one organization**. The first visit shows a setup screen that names the organization
+and creates the first admin; after that everyone signs in with email and password.
+
+| Role | Can |
+|---|---|
+| admin | everything, including managing users, the organization name and deleting projects |
+| geologist | log, annotate, import, run AI analysis, edit holes and logs |
+| viewer | read and export only |
+
+Admins add people under their name → **Users & organization** and hand over a generated temporary password.
+
+Security: scrypt password hashes; random session tokens in HttpOnly, SameSite=Lax cookies (Secure on HTTPS),
+stored only as SHA-256 hashes, 14-day sliding expiry; every API route except health, auth status, login and
+setup requires a session; role checks on the server; writes need an `X-Requested-With` header (CSRF);
+sign-in is rate-limited and doesn't reveal which emails exist; changing a user's access signs them out. Edits
+and uploads record the user. On a public deployment set `CV_SETUP_TOKEN` so only you can complete setup (the
+GCP scripts do this). There's no email-based password reset yet: an admin resets passwords.
+
 ## Database migrations (Alembic)
 
 The schema lives in `backend/migrations/versions/`. The server runs `alembic upgrade head` at startup, and a

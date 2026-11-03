@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
-import { useStore } from '../store';
+import { useCanEdit, useIsAdmin, useStore } from '../store';
 import { CATEGORIES, COLORS, fmt, loggedMetres } from '../lib/geo';
 import { NewProject } from '../components/TopBar';
 import { NewHole } from '../components/Sidebar';
@@ -20,6 +20,8 @@ export function AiBanner() {
 
 export default function Overview() {
   const { project, health, navigate, patchProject, deleteProject } = useStore();
+  const canEdit = useCanEdit();
+  const isAdmin = useIsAdmin();
   const [newProject, setNewProject] = useState(false);
   const [newHole, setNewHole] = useState(false);
 
@@ -57,7 +59,7 @@ export default function Overview() {
       <div className="page-head">
         <div className="grow"><div className="crumbs">Project overview</div><h1>{project.name}</h1></div>
         <button className="btn" onClick={() => navigate({ view: 'model' })}>Open 3D model</button>
-        <button className="btn primary" onClick={() => setNewHole(true)}><Plus size={15} />New hole</button>
+        {canEdit ? <button className="btn primary" onClick={() => setNewHole(true)}><Plus size={15} />New hole</button> : <span className="badge">read-only access</span>}
       </div>
       <AiBanner />
       <div className="stats">
@@ -115,8 +117,8 @@ export default function Overview() {
             <div className="card-h"><h3>Visual vs assay</h3></div>
             <CalibrationChart />
           </div>
-          <CodesEditor />
-          <div className="card">
+          {canEdit && <CodesEditor />}
+          {canEdit && <div className="card">
             <div className="card-h"><h3>Project settings</h3></div>
             <div className="col">
               <Field label="Name"><CommitInput value={project.name} onCommit={v => v.trim() && patchProject({ name: v.trim() })} /></Field>
@@ -127,9 +129,9 @@ export default function Overview() {
                 </select>
               </Field>
               <Field label="CRS (EPSG code)"><CommitInput inputMode="numeric" placeholder="e.g. 32630" value={project.crs_epsg} onCommit={v => { const n = parseInt(v); patchProject({ crs_epsg: Number.isFinite(n) ? n : null }); }} /></Field>
-              <div><button className="btn danger sm" onClick={() => confirm(`Delete "${project.name}" with all holes, photos and logs? This cannot be undone.`) && deleteProject()}><Trash2 size={13} />Delete project</button></div>
+              {isAdmin && <div><button className="btn danger sm" onClick={() => confirm(`Delete "${project.name}" with all holes, photos and logs? This cannot be undone.`) && deleteProject()}><Trash2 size={13} />Delete project</button></div>}
             </div>
-          </div>
+          </div>}
         </div>
       </div>
       {newHole && <NewHole onClose={() => setNewHole(false)} />}

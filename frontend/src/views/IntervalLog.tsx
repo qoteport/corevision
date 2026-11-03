@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Plus, Sparkles, X } from 'lucide-react';
-import { useStore } from '../store';
+import { useCanEdit, useStore } from '../store';
 import { api, type Hole, type Interval, type LoggingCode, type QaIssue } from '../api';
 
 const blank = (from: number, to: number): Interval => ({
@@ -12,6 +12,7 @@ const INTENSITY = ['–', 'weak', 'moderate', 'strong'];
 /** Editable from–to downhole log: the table geologists export to Leapfrog / Micromine / acQuire. */
 export default function IntervalLog({ hole, onSaved }: { hole: Hole; onSaved: () => void }) {
   const { project, toast, dataVersion } = useStore();
+  const canEdit = useCanEdit();
   const [rows, setRows] = useState<Interval[]>([]);
   const [saved, setSaved] = useState<string>('[]');
   const [qa, setQa] = useState<QaIssue[]>([]);
@@ -81,10 +82,10 @@ export default function IntervalLog({ hole, onSaved }: { hole: Hole; onSaved: ()
     <div className="card">
       <div className="card-h">
         <h3 className="grow">Interval log</h3>
-        <button className="btn sm" disabled={busy} onClick={draft}><Sparkles size={13} />Draft from photos</button>
-        <button className="btn sm" onClick={add}><Plus size={13} />Row</button>
+        {canEdit && <button className="btn sm" disabled={busy} onClick={draft}><Sparkles size={13} />Draft from photos</button>}
+        {canEdit && <button className="btn sm" onClick={add}><Plus size={13} />Row</button>}
         {dirty && <button className="btn sm ghost" onClick={() => setRows(JSON.parse(saved))}>Discard</button>}
-        <button className="btn sm primary" disabled={!dirty || busy || Object.keys(problems).length > 0} onClick={save}>Save log</button>
+        {canEdit && <button className="btn sm primary" disabled={!dirty || busy || Object.keys(problems).length > 0} onClick={save}>Save log</button>}
       </div>
 
       {qa.length > 0 ? (
@@ -97,7 +98,7 @@ export default function IntervalLog({ hole, onSaved }: { hole: Hole; onSaved: ()
       {!rows.length ? (
         <div className="mu">No intervals yet. <b>Draft from photos</b> builds a first pass from the annotated core photos, or add rows by hand.</div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <fieldset className="plain" disabled={!canEdit} style={{ overflowX: 'auto' }}>
           <table className="t" style={{ minWidth: 980 }}>
             <thead><tr><th>From</th><th>To</th><th>Lithology</th><th>Alteration</th><th>Int.</th><th>Mineralization</th><th>Sulph %</th><th>Vein %</th><th>Comments</th><th /></tr></thead>
             <tbody>
@@ -126,7 +127,7 @@ export default function IntervalLog({ hole, onSaved }: { hole: Hole; onSaved: ()
               ))}
             </tbody>
           </table>
-        </div>
+        </fieldset>
       )}
       <datalist id="cv-lith">{byField.lithology.map(c => <option key={c.code} value={c.code}>{c.description}</option>)}</datalist>
       <datalist id="cv-alt">{byField.alteration.map(c => <option key={c.code} value={c.code}>{c.description}</option>)}</datalist>

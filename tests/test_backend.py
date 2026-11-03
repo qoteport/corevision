@@ -20,12 +20,6 @@ from app import ai, geo  # noqa: E402
 from app.main import app  # noqa: E402
 
 
-@pytest.fixture(scope="module")
-def client():
-    with TestClient(app) as c:
-        yield c
-
-
 # ---------- geometry ----------
 
 def test_straight_hole_matches_trig():

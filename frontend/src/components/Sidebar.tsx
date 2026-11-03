@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { AlertTriangle, FileUp, Loader2, Plus } from 'lucide-react';
-import { useStore } from '../store';
+import { useCanEdit, useStore } from '../store';
 import type { HoleInput } from '../api';
 import { fmt, loggedMetres, runText } from '../lib/geo';
 import { Field, FilePick, Modal } from './ui';
 
 export default function Sidebar({ open }: { open: boolean }) {
   const { project, route, navigate, importCsv } = useStore();
+  const canEdit = useCanEdit();
   const [adding, setAdding] = useState(false);
   if (!project) return <aside className={'side' + (open ? ' open' : '')}><div className="side-head mu tiny">Create a project to begin.</div></aside>;
   const holeId = 'holeId' in route ? route.holeId : null;
@@ -20,7 +21,7 @@ export default function Sidebar({ open }: { open: boolean }) {
       </div>
       <div className="side-scroll">
         <div className="sect"><span>Drillholes · {project.holes.length}</span>
-          <button className="btn ghost sm icon" onClick={() => setAdding(true)} aria-label="New hole" title="New hole"><Plus size={15} /></button>
+          {canEdit && <button className="btn ghost sm icon" onClick={() => setAdding(true)} aria-label="New hole" title="New hole"><Plus size={15} /></button>}
         </div>
         {!project.holes.length && <div className="mu tiny" style={{ padding: '4px 8px' }}>No holes yet. Add one or import a collar CSV.</div>}
         {project.holes.map(h => {
@@ -45,7 +46,7 @@ export default function Sidebar({ open }: { open: boolean }) {
           );
         })}
       </div>
-      <div className="side-foot" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+      <div className="side-foot" style={{ gridTemplateColumns: '1fr 1fr 1fr' }} hidden={!canEdit}>
         <FilePick className="btn sm" accept=".csv,text/csv" onFile={f => importCsv('collars', f)}><FileUp size={13} />Collars</FilePick>
         <FilePick className="btn sm" accept=".csv,text/csv" onFile={f => importCsv('surveys', f)}><FileUp size={13} />Surveys</FilePick>
         <FilePick className="btn sm" accept=".csv,text/csv" onFile={f => importCsv('assays', f)}><FileUp size={13} />Assays</FilePick>

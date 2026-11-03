@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { useStore } from '../store';
+import { useCanEdit, useStore } from '../store';
 import { api, type Hole, type HoleGeotech } from '../api';
 import { fmt } from '../lib/geo';
 
@@ -16,6 +16,7 @@ export const rqdColor = (r: number) => (r < 25 ? '#ff4d6a' : r < 50 ? '#ff8a3d' 
 /** RQD / recovery / fracture frequency per photographed run, plus hole summary. */
 export default function GeotechPanel({ hole, geotech }: { hole: Hole; geotech: HoleGeotech | null }) {
   const { health, patchHole, navigate } = useStore();
+  const canEdit = useCanEdit();
   const sizes = Object.entries(health?.core_sizes ?? { NQ: 47.6 });
   const s = geotech?.summary;
   return (
@@ -23,7 +24,7 @@ export default function GeotechPanel({ hole, geotech }: { hole: Hole; geotech: H
       <div className="card-h">
         <h3 className="grow">Geotechnical log</h3>
         <label className="row tiny mu">Core size
-          <select className="input sm" style={{ width: 'auto' }} value={hole.core_size || 'NQ'} onChange={e => patchHole(hole.id, { core_size: e.target.value })}>
+          <select className="input sm" style={{ width: 'auto' }} disabled={!canEdit} value={hole.core_size || 'NQ'} onChange={e => patchHole(hole.id, { core_size: e.target.value })}>
             {sizes.map(([k, d]) => <option key={k} value={k}>{k} · {d} mm</option>)}
           </select>
         </label>
